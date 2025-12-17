@@ -1,0 +1,20 @@
+# ===== Build =====
+target/
+*.jar
+
+# ===== Logs =====
+logs/
+*.log
+
+# ===== Env / Secrets =====
+application-prod.properties
+application-*.properties
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.iml
