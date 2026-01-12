@@ -16,7 +16,6 @@ public class WeatherBackfillService {
     public void runBackfill() {
         LocalDateTime from = backfillProps.getFrom();
         LocalDateTime to = backfillProps.getTo();
-        int step = backfillProps.getStepMinutes();
         long sleepMs = backfillProps.getSleepMs();
 
         if (from == null || to == null) {
@@ -26,28 +25,32 @@ public class WeatherBackfillService {
             throw new IllegalArgumentException("backfill.from 은 backfill.to 보다 이후일 수 없습니다.");
         }
 
-        System.out.println("[BACKFILL] start: " + from + " ~ " + to);
+        // ✅ 시작을 정각으로 보정 (00분 00초)
+        LocalDateTime cur = from.withMinute(0).withSecond(0).withNano(0);
 
-        LocalDateTime cur = from;
+        System.out.println("[BACKFILL] start: " + cur + " ~ " + to);
+
         long total = 0;
         long ok = 0;
 
         while (!cur.isAfter(to)) {
             total++;
             try {
-                collectService.collectByTm(cur);
+                collectService.collectByTm(cur); // ✅ 이게 15개 지역을 한 번에 수집
                 ok++;
             } catch (Exception e) {
-                // 백필은 "죽지 말고 다음 시간으로"가 중요
                 System.out.println("[BACKFILL] error at " + cur + " : " + e.getMessage());
             }
 
-            // rate limit 대비
             if (sleepMs > 0) {
-                try { Thread.sleep(sleepMs); } catch (InterruptedException ignored) {}
+                try {
+                    Thread.sleep(sleepMs);
+                } catch (InterruptedException ignored) {
+                }
             }
 
-            cur = cur.plusMinutes(step);
+            // ✅ 3시간 단위(하루 8번)
+            cur = cur.plusHours(3);
         }
 
         System.out.println("[BACKFILL] done. total=" + total + ", processed=" + ok);
